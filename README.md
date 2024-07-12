@@ -3,11 +3,11 @@ Building a Question Answering System with Multimodal Retrieval Augmented Generat
 
 This repository provides a guide to building a question-answering system using multimodal retrieval augmented generation (RAG). The system leverages Google's Gemini models, the Vertex AI API, and text embeddings to perform Q&A over documents containing both text and images.
 
-[![Watch the video Part - 1](https://www.loom.com/share/0265665f257049668f0fa5771bedc219?sid=95a28345-4e0f-4759-a4b8-0ff03bba229e)](https://www.youtube.com/watch?v=z_gv7HOLUmI)
+[Watch the video Part - 1](https://www.loom.com/share/0265665f257049668f0fa5771bedc219?sid=95a28345-4e0f-4759-a4b8-0ff03bba229e)
 
-[![Watch the video Part - 2](https://www.loom.com/share/032378a93aed4dbc9c52b353f646d76c?sid=726f16a5-285d-4362-a340-31811fc898d7)](https://www.youtube.com/watch?v=z_gv7HOLUmI)
+[Watch the video Part - 2](https://www.loom.com/share/032378a93aed4dbc9c52b353f646d76c?sid=726f16a5-285d-4362-a340-31811fc898d7)
 
-[![Watch the video Part - 3](https://www.loom.com/share/cb5be35a53f347798c9069b1f3ffab0b?sid=08dffe8c-6958-478e-8f17-3b0f21839790)](https://www.youtube.com/watch?v=z_gv7HOLUmI)
+[Watch the video Part - 3](https://www.loom.com/share/cb5be35a53f347798c9069b1f3ffab0b?sid=08dffe8c-6958-478e-8f17-3b0f21839790)
 
 Table of Contents
 -----------------
