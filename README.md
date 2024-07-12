@@ -54,149 +54,103 @@ To get started, you need a Google Cloud project with the Vertex AI API enabled. 
 Installation
 ------------
 
-First, install the required packages:
+1.  **Install Required Packages:**
 
-`pip install --upgrade --quiet pymupdf langchain gradio google-cloud-aiplatform langchain_google_vertexai
-pip install langchain_community`
+    -   Install packages such as `pymupdf`, `langchain`, `gradio`, `google-cloud-aiplatform`, and `langchain_google_vertexai`.
+2.  **Restart Runtime:**
 
-After installing the packages, restart the runtime:
-
-python
-
-
-`import IPython
-app = IPython.Application.instance()
-app.kernel.do_shutdown(True)`
+    -   After installing the packages, restart the runtime to ensure all packages are loaded correctly.
 
 Authentication
 --------------
 
-If running on Google Colab, authenticate your environment:
+1.  **Google Colab Authentication:**
 
-`import sys
-if "google.colab" in sys.modules:
-    from google.colab import auth
-    auth.authenticate_user()`
+    -   If running on Google Colab, authenticate your environment using Google Colab's authentication methods.
+2.  **Vertex AI Workbench:**
+
+    -   If using Vertex AI Workbench, skip the authentication step as it is not required.
 
 Initializing Vertex AI
 ----------------------
 
-Define your Google Cloud project information and initialize Vertex AI:
+1.  **Define Project Information:**
 
-`'PROJECT_ID = "your-project-id"
-LOCATION = "us-east1"`
+    -   Specify your Google Cloud project ID and location.
+2.  **Initialize Vertex AI:**
 
-`import vertexai
-vertexai.init(project=PROJECT_ID, location=LOCATION)`
+    -   Initialize the Vertex AI environment with the specified project information.
 
 Extracting Data from PDFs
 -------------------------
 
-Process the PDF to extract data:
+1.  **Download Sample PDF and Images:**
 
-`import fitz
-PDF_FILENAME = "04a02.pdf"
-doc = fitz.open(PDF_FILENAME)
-for page in doc:
-    pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0))
-    outpath = f"./Images/{PDF_FILENAME}_{page.number}.jpg"
-    pix.save(outpath)`
+    -   Download a sample PDF file and a default image to use when no results are found.
+2.  **Process PDF to Images:**
+
+    -   Split the PDF into images by rendering each page as an image using the `fitz` library.
+3.  **Extract Data Using Gemini Vision Pro:**
+
+    -   Load each image and use the Gemini Vision Pro model to extract text and tabular data from the images.
+4.  **Store Extracted Information:**
+
+    -   Store the extracted information in a Big Query for further processing.
 
 Generating Text Embeddings
 --------------------------
 
-Generate text embeddings using the textembedding-gecko model:
+1.  **Initialize Text Embedding Model:**
 
-`from vertexai.language_models import TextEmbeddingModel
-text_embedding_model = TextEmbeddingModel.from_pretrained("textembedding-gecko@003")`
+    -   Use the `textembedding-gecko` model to generate embeddings for the extracted text data.
+2.  **Generate Text Embeddings:**
 
-`def generate_text_embedding(text) -> list:
-    embeddings = text_embedding_model.get_embeddings([text])
-    return embeddings[0].values`
+    -   Create a function to generate text embeddings and apply it to the extracted text data to create a list of embeddings.
+3.  **Store Embeddings:**
+
+    -   Store the generated embeddings in a Big Query along with the corresponding text and image references.
 
 Creating and Deploying a Vector Search Index
 --------------------------------------------
 
-Create a vector search index to store and search through embeddings:
+1.  **Create Vector Search Index:**
 
+    -   Define parameters for the vector search index, including the number of dimensions and distance measure type.
+2.  **Save Embeddings to JSON:**
 
-`VECTOR_SEARCH_REGION = "us-central1"
-VECTOR_SEARCH_INDEX_NAME = f"{PROJECT_ID}-vector-search-index-ht"
-VECTOR_SEARCH_EMBEDDING_DIR = f"{PROJECT_ID}-vector-search-bucket-ht"
-VECTOR_SEARCH_DIMENSIONS = 768`
+    -   Save the embeddings in JSONL format and upload them to a Google Cloud Storage bucket.
+3.  **Create and Deploy Index:**
 
-`# Save embeddings to Big Query
-embedding_df = ... # DataFrame containing your embeddings
-jsonl_string = embedding_df[["id", "embedding"]].to_json(orient="records", lines=True)
-with open("data.json", "w") as f:
-    f.write(jsonl_string)`
-
-`# Upload to Google Cloud Storage
-BUCKET_URI = f"gs://{VECTOR_SEARCH_EMBEDDING_DIR}-{UID}"
-! gsutil mb -l $LOCATION -p {PROJECT_ID} {BUCKET_URI}
-! gsutil cp data.json {BUCKET_URI}`
-
-`# Create the index
-from google.cloud import aiplatform
-my_index = aiplatform.MatchingEngineIndex.create_tree_ah_index(
-    display_name=VECTOR_SEARCH_INDEX_NAME,
-    contents_delta_uri=BUCKET_URI,
-    dimensions=768,
-    approximate_neighbors_count=20,
-    distance_measure_type="DOT_PRODUCT_DISTANCE",
-)`
-
-`# Create an Index Endpoint
-my_index_endpoint = aiplatform.MatchingEngineIndexEndpoint.create(
-    display_name=VECTOR_SEARCH_INDEX_NAME,
-    public_endpoint_enabled=True,
-)`
-
-`# Deploy the index
-DEPLOYED_INDEX_ID = f"{VECTOR_SEARCH_INDEX_NAME.replace('-', '_')}_{UID}"
-my_index_endpoint.deploy_index(index=my_index, deployed_index_id=DEPLOYED_INDEX_ID)`
+    -   Create a vector search index using the Vertex AI Matching Engine and deploy it to an endpoint.
 
 Asking Questions to the PDF
 ---------------------------
 
-Create functions to handle queries and generate answers using the Gemini Pro model:
+1.  **Generate Query Embeddings:**
 
-`def get_prompt_text(question, context):
-    return f"Answer the question using the context below. Question: {question} Context: {context}"`
+    -   Create a function to generate embeddings for the user's query.
+2.  **Find Relevant Documents:**
 
-`def get_answer(query):
-    query_embeddings = generate_text_embedding(query)
-    response = my_index_endpoint.find_neighbors(
-        deployed_index_id=DEPLOYED_INDEX_ID,
-        queries=[query_embeddings],
-        num_neighbors=5,
-    )`
+    -   Use the vector search endpoint to find the most relevant documents based on the query embeddings.
+3.  **Generate Answer:**
 
-`query = "What are the steps of Transformer Manufacturing Flow?"
-result, page_source = get_answer(query)
-print(result)`
+    -   Create a function to generate an answer by using the relevant documents as context for the Gemini Pro model.
+4.  **Handle Multiple Attempts:**
+
+    -   Implement logic to handle multiple attempts at finding a satisfactory answer, using the next most relevant document if necessary.
 
 Using Gradio UI for Q&A
 -----------------------
 
-Create a web-based frontend using Gradio:
+1.  **Set Up Gradio Interface:**
 
+    -   Use Gradio to create a web-based interface for the question-answering system.
+2.  **Define User Interactions:**
 
-`import gradio as gr
-from PIL import Image as PIL_Image`
+    -   Define how user inputs (queries) are processed and how the results (answers and images) are displayed.
+3.  **Launch Gradio App:**
 
-`def gradio_query(query):
-    result, image_path = get_answer(query)
-    image = PIL_Image.open(image_path) if os.path.exists(image_path) else PIL_Image.open("./Images/blank.jpg")
-    return result, image`
-
-`with gr.Blocks() as demo:
-    query = gr.Textbox(label="Query", info="Enter your query")
-    btn_enter = gr.Button("Process")
-    answer = gr.Textbox(label="Response", interactive=False)
-    image = gr.Image(label="Reference")
-    btn_enter.click(fn=gradio_query, inputs=query, outputs=[answer, image])
-    demo.launch(share=True, debug=True, inbrowser=True)`
+    -   Launch the Gradio app to make the question-answering system accessible via a web interface.
 
 References
 ----------
@@ -205,4 +159,4 @@ References
 -   LangChain documentation
 -   Gradio documentation
 
-This README provides a comprehensive overview and instructions for setting up and running the multimodal RAG-based question-answering system using Google Cloud's Vertex AI and Gemini models. For more details, refer to the provided documentation links.
+This README provides a comprehensive overview and detailed instructions for setting up and running the multimodal RAG-based question-answering system using Google Cloud's Vertex AI and Gemini models. For more details, refer to the provided documentation links.
