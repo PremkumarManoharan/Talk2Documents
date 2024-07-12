@@ -1,1 +1,6 @@
-pymupdf langchain  gradio google-cloud-aiplatform langchain_google_vertexai langchain_community
+pymupdf 
+langchain  
+gradio 
+google-cloud-aiplatform 
+langchain_google_vertexai 
+langchain_community
